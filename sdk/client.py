@@ -18,10 +18,8 @@ from sdk.models import (
     CreateDatasetRequest,
     CreateEvaluationRequest,
     DatasetEntry,
-    DatasetHashEntry,
     EvaluationType,
     Question,
-    UpdateDatasetRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -86,6 +84,10 @@ class EvaluationClient:
             name: Human-readable display name.
         """
         logger.info("Ensuring app '%s' exists", slug)
+        if slug in self._slug_cache:
+            logger.info("App '%s' already exists, skipping creation", slug)
+            return
+
         headers = await self._auth.headers()
         resp = await self._http.get(
             f"{self.base_url}/v1/app/by-slug/{slug}",
@@ -93,6 +95,7 @@ class EvaluationClient:
         )
         if resp.status_code == 200:
             logger.info("App '%s' already exists, skipping creation", slug)
+            self._slug_cache[slug] = AppResponse.model_validate(resp.json()).id
             return
         if resp.status_code != 404:
             raise_for_status(resp)
@@ -105,6 +108,7 @@ class EvaluationClient:
             headers=headers,
         )
         raise_for_status(create_resp)
+        self._slug_cache[slug] = AppResponse.model_validate(create_resp.json()).id
         logger.info("App '%s' created", slug)
 
     async def add_questions(
@@ -114,8 +118,7 @@ class EvaluationClient:
     ) -> None:
         """Idempotent — safe to call on every deploy.
 
-        Syncs *questions* to the remote dataset using SHA-256 diffing so that
-        only new or changed entries are written.
+        Syncs *questions* to the remote dataset.
 
         Args:
             app_slug: Slug of the target app.
@@ -125,48 +128,17 @@ class EvaluationClient:
         logger.info("Syncing %d question(s) for app '%s'", len(questions), app_slug)
 
         headers = await self._auth.headers()
-        hashes_resp = await self._http.get(
-            f"{self.base_url}/v1/app/{app_id}/datasets/hashes",
+        hashes_resp = await self._http.post(
+            f"{self.base_url}/v1/app/{app_id}/datasets",
+            json={
+                "datasets": [
+                    CreateDatasetRequest(**q.model_dump()).model_dump()
+                    for q in questions
+                ]
+            },
             headers=headers,
         )
         raise_for_status(hashes_resp)
-        existing = [
-            DatasetHashEntry.model_validate(entry) for entry in hashes_resp.json()
-        ]
-
-        existing_by_q_hash: dict[str, DatasetHashEntry] = {
-            entry.question_hash: entry for entry in existing
-        }
-
-        for q in questions:
-            q_hash = _sha256(q.question)
-            a_hash = _sha256(q.human_answer)
-
-            if q_hash not in existing_by_q_hash:
-                logger.info("Adding new question: '%s'", q.question)
-                body = CreateDatasetRequest(
-                    question=q.question, human_answer=q.human_answer
-                )
-                raise_for_status(
-                    await self._http.post(
-                        f"{self.base_url}/v1/app/{app_id}/datasets",
-                        json=body.model_dump(),
-                        headers=headers,
-                    )
-                )
-            elif existing_by_q_hash[q_hash].human_answer_hash != a_hash:
-                dataset_id = existing_by_q_hash[q_hash].id
-                logger.info("Updating answer for question: '%s'", q.question)
-                patch_body = UpdateDatasetRequest(human_answer=q.human_answer)
-                raise_for_status(
-                    await self._http.patch(
-                        f"{self.base_url}/v1/app/{app_id}/datasets/{dataset_id}",
-                        json=patch_body.model_dump(),
-                        headers=headers,
-                    )
-                )
-            else:
-                logger.debug("Question unchanged, skipping: '%s'", q.question)
 
     async def run_evaluation(
         self,
