@@ -23,6 +23,7 @@ class TokenResponse(BaseModel):
     """Response from ``POST {issuer}/oauth/v2/token``."""
 
     access_token: str
+    id_token: str
     token_type: str
     expires_in: int
 
