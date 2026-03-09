@@ -7,8 +7,8 @@ import time
 
 import httpx
 
-from sdk.http import raise_for_status
-from sdk.models import TokenResponse, WellKnown
+from verdikt_sdk.http import raise_for_status
+from verdikt_sdk.models import TokenResponse, WellKnown
 
 logger = logging.getLogger(__name__)
 

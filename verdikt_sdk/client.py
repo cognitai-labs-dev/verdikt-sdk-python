@@ -10,9 +10,9 @@ from typing import Callable, Coroutine
 import httpx
 from yalc import LLMModel
 
-from sdk.auth import TokenAuth
-from sdk.http import raise_for_status
-from sdk.models import (
+from verdikt_sdk.auth import TokenAuth
+from verdikt_sdk.http import raise_for_status
+from verdikt_sdk.models import (
     AppResponse,
     CreateAppRequest,
     CreateDatasetRequest,
