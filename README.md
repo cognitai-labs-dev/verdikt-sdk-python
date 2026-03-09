@@ -11,11 +11,10 @@ pip install verdikt-sdk
 ## Usage
 
 ```python
-from verdikt_sdk import EvaluationClient
-from verdikt_sdk.models import EvaluationType, Question
+from verdikt_sdk import VerdiktClient, EvaluationType, Question
 from yalc import LLMModel
 
-client = EvaluationClient(
+client = VerdiktClient(
     base_url="https://your-verdikt-instance.com",
     client_id="your-client-id",
     client_secret="your-client-secret",

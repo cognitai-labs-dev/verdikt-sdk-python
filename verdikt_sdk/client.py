@@ -1,9 +1,8 @@
-"""Evaluation SDK client."""
+"""Verdikt SDK client."""
 
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import logging
 from typing import Callable, Coroutine
 
@@ -25,17 +24,13 @@ from verdikt_sdk.models import (
 logger = logging.getLogger(__name__)
 
 
-def _sha256(text: str) -> str:
-    return hashlib.sha256(text.strip().encode()).hexdigest()
+class VerdiktClient:
+    """Python SDK for the Verdikt Evaluation API.
 
-
-class EvaluationClient:
-    """Python SDK for the Evaluation API.
-
-    Handles OAuth2 authentication, dataset diffing, and evaluation submission.
+    Handles OAuth2 authentication, dataset syncing, and evaluation submission.
 
     Args:
-        base_url: Base URL of the evaluation service, e.g. ``"https://eval.mycompany.com"``.
+        base_url: Base URL of the Verdikt service, e.g. ``"https://verdikt.mycompany.com"``.
         client_id: Zitadel machine user client ID.
         client_secret: Zitadel machine user client secret.
     """
