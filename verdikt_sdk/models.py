@@ -99,10 +99,21 @@ class EvaluationType(StrEnum):
     HUMAN_AND_LLM = "HUMAN_AND_LLM"
 
 
+class AnswerWithCost(BaseModel):
+    """Answer plus the cost incurred producing it.
+
+    Returned by ``run_evaluation`` callbacks. ``cost`` is optional — pass
+    ``None`` (or omit) when cost tracking is not relevant.
+    """
+
+    answer: str
+    cost: float | None = None
+
+
 class CreateEvaluationRequest(BaseModel):
     """Request body for ``POST /v1/app/{id}/evaluation``."""
 
     app_version: str
     evaluation_type: EvaluationType
-    app_answers: dict[str, str]
+    app_answers: dict[str, AnswerWithCost]
     llm_judge_models: list[LLMModel]
