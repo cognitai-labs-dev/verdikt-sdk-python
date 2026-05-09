@@ -97,13 +97,17 @@ Idempotent — safe to call on every deploy. Uses SHA-256 of the question text a
 ### `run_evaluation(app_slug, app_version, callback, ...)`
 1. Resolve `app_slug` → `app_id` via `GET /v1/app/by-slug/{slug}` (cached per client instance)
 2. `GET /v1/app/{id}/datasets` → full question list
-3. For each dataset item: `answer = callback(item["question"])`
+3. For each dataset item: `result = await callback(item["question"])` where
+   `result` is an `AnswerWithCost(answer: str, cost: float | None)`
 4. `POST /v1/app/{id}/evaluation` with:
    ```json
    {
      "app_version": "<app_version>",
      "evaluation_type": "<evaluation_type>",
-     "app_answers": { "<dataset_id>": "<answer>", ... },
+     "app_answers": {
+       "<dataset_id>": { "answer": "<answer>", "cost": 0.0123 },
+       "<dataset_id>": { "answer": "<answer>", "cost": null }
+     },
      "llm_judge_models": ["gpt-4o-mini"]
    }
    ```

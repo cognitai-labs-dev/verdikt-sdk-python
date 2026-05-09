@@ -561,12 +561,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/45/04/e442e1356c97b03a6d30d2b462f7c0bdfbf207e75f6833815fd1225a75b4/instructor-1.14.5-py3-none-any.whl", hash = "sha256:2a5a31222b008c0989be1cc001e33a237f49506e80ac5833f6d36d7690bae7b1", size = 177445, upload-time = "2026-01-29T14:18:53.641Z" },
 ]
 
-[package.optional-dependencies]
-anthropic = [
-    { name = "anthropic" },
-    { name = "xmltodict" },
-]
-
 [[package]]
 name = "jinja2"
 version = "3.1.6"
@@ -1603,7 +1597,7 @@ wheels = [
 
 [[package]]
 name = "verdikt-sdk"
-version = "0.1.1"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
@@ -1626,7 +1620,7 @@ dev = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "pydantic", specifier = ">=2.0" },
-    { name = "yalc", specifier = ">=0.2.1" },
+    { name = "yalc", specifier = ">=0.3.2" },
 ]
 
 [package.metadata.requires-dev]
@@ -1656,26 +1650,18 @@ wheels = [
 ]
 
 [[package]]
-name = "xmltodict"
-version = "1.0.4"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/19/70/80f3b7c10d2630aa66414bf23d210386700aa390547278c789afa994fd7e/xmltodict-1.0.4.tar.gz", hash = "sha256:6d94c9f834dd9e44514162799d344d815a3a4faec913717a9ecbfa5be1bb8e61", size = 26124, upload-time = "2026-02-22T02:21:22.074Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/34/98a2f52245f4d47be93b580dae5f9861ef58977d73a79eb47c58f1ad1f3a/xmltodict-1.0.4-py3-none-any.whl", hash = "sha256:a4a00d300b0e1c59fc2bfccb53d7b2e88c32f200df138a0dd2229f842497026a", size = 13580, upload-time = "2026-02-22T02:21:21.039Z" },
-]
-
-[[package]]
 name = "yalc"
-version = "0.2.1"
+version = "0.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "anthropic" },
     { name = "cachetools" },
-    { name = "instructor", extra = ["anthropic"] },
+    { name = "instructor" },
     { name = "litellm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b6/ca/e6b13d5b9261342feb0dc18caa277f7e4eefc43cf486f1665749411f6625/yalc-0.2.1.tar.gz", hash = "sha256:8ce5cb4fd2101b1b575d3138137a82c5c5a8be7e0f05bdc98ee27ad5ec4f0026", size = 7217, upload-time = "2026-02-21T13:54:54.071Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/63/f3/ba1a90f2f35243ca7d0f2b3bb78ddd087c18aabbe7842305098c6ee34a80/yalc-0.3.2.tar.gz", hash = "sha256:71eb3f87e385dd15c589bffa366242dba7ffa357e2bff2c62d1b383e9710bc69", size = 110616, upload-time = "2026-04-26T09:52:34.923Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ea/24/9c4af6a39a1b7af3c125c5ff914ebfb4ce0a795ed1ccfd3ad2a08d1f8875/yalc-0.2.1-py3-none-any.whl", hash = "sha256:23cb5608b518a08d516cecceab95cc76c844878d8da1f1ad5d9c0a9fe8877bdf", size = 9178, upload-time = "2026-02-21T13:54:52.75Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/e6/79373059f254a6917c1dd7220e2a175f231dea17244cea94a29caed7eb8f/yalc-0.3.2-py3-none-any.whl", hash = "sha256:07035b68f180e2f56d4ea249a6a4adbddd531bd7fecf708bfbf1e99ee88c48b1", size = 8993, upload-time = "2026-04-26T09:52:33.462Z" },
 ]
 
 [[package]]

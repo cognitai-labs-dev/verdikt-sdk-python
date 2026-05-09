@@ -12,6 +12,7 @@ from yalc import LLMModel
 from verdikt_sdk.auth import TokenAuth
 from verdikt_sdk.http import raise_for_status
 from verdikt_sdk.models import (
+    AnswerWithCost,
     AppResponse,
     CreateAppRequest,
     CreateDatasetRequest,
@@ -139,7 +140,7 @@ class VerdiktClient:
         self,
         app_slug: str,
         app_version: str,
-        callback: Callable[[str], Coroutine[None, None, str]],
+        callback: Callable[[str], Coroutine[None, None, AnswerWithCost]],
         evaluation_type: EvaluationType,
         llm_judge_models: list[LLMModel],
     ) -> None:
@@ -151,7 +152,8 @@ class VerdiktClient:
             app_slug: Slug of the target app.
             app_version: Semantic version string identifying this build.
             callback: Async function that receives a question string and returns
-                an answer string.
+                an :class:`AnswerWithCost` (the answer plus the optional cost
+                of producing it).
             evaluation_type: Whether to use LLM scoring only or both human and
                 LLM scoring.
             llm_judge_models: List of model identifiers to use as judges.
