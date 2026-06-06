@@ -111,6 +111,7 @@ class VerdiktClient:
         self,
         app_slug: str,
         questions: list[Question],
+        delete_old: bool = False,
     ) -> None:
         """Idempotent — safe to call on every deploy.
 
@@ -119,11 +120,40 @@ class VerdiktClient:
         Args:
             app_slug: Slug of the target app.
             questions: List of questions with their expected human answers.
+            delete_old: When ``True``, **DELETES** every existing question whose
+                text is not present in *questions*. Use with care — this removes
+                data on the server.
+
+                As a safeguard, if this would delete *all* existing questions
+                (i.e. none of *questions* overlaps the existing set), a
+                :class:`ValueError` is raised and nothing is deleted or added.
         """
         app_id = await self._resolve_slug(app_slug)
         logger.info("Syncing %d question(s) for app '%s'", len(questions), app_slug)
 
         headers = await self._auth.headers()
+
+        # Determine which existing questions to delete *before* mutating anything,
+        # so a refused full-wipe leaves the server untouched.
+        to_delete: list[DatasetEntry] = []
+        if delete_old:
+            existing_resp = await self._http.get(
+                f"{self.base_url}/v1/app/{app_id}/datasets",
+                headers=headers,
+            )
+            raise_for_status(existing_resp)
+            existing = [
+                DatasetEntry.model_validate(item) for item in existing_resp.json()
+            ]
+            provided = {q.question for q in questions}
+            to_delete = [e for e in existing if e.question not in provided]
+            if existing and len(to_delete) == len(existing):
+                raise ValueError(
+                    f"delete_old would remove all {len(existing)} question(s) for "
+                    f"app '{app_slug}' (provided questions share none of the "
+                    f"existing ones); refusing to wipe the dataset."
+                )
+
         hashes_resp = await self._http.post(
             f"{self.base_url}/v1/app/{app_id}/datasets",
             json={
@@ -135,6 +165,22 @@ class VerdiktClient:
             headers=headers,
         )
         raise_for_status(hashes_resp)
+
+        if to_delete:
+            logger.info(
+                "Deleting %d old question(s) for app '%s'", len(to_delete), app_slug
+            )
+            resps = await asyncio.gather(
+                *[
+                    self._http.delete(
+                        f"{self.base_url}/v1/app/{app_id}/datasets/{e.id}",
+                        headers=headers,
+                    )
+                    for e in to_delete
+                ]
+            )
+            for resp in resps:
+                raise_for_status(resp)
 
     async def run_evaluation(
         self,
