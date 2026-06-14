@@ -32,8 +32,12 @@ class VerdiktClient:
 
     Args:
         base_url: Base URL of the Verdikt service, e.g. ``"https://verdikt.mycompany.com"``.
-        client_id: Zitadel machine user client ID.
-        client_secret: Zitadel machine user client secret.
+        client_id: Machine/service-account client ID registered in your IdP.
+        client_secret: The matching client secret.
+        audience: Optional ``audience`` to request so the token's ``aud`` matches
+            the Verdikt backend's ``OIDC_AUDIENCE``. Needed when the backend
+            verifies a specific audience and the IdP wouldn't otherwise set it.
+        scope: OAuth scopes to request. Defaults to ``"openid profile"``.
     """
 
     def __init__(
@@ -41,6 +45,8 @@ class VerdiktClient:
         base_url: str,
         client_id: str,
         client_secret: str,
+        audience: str | None = None,
+        scope: str = "openid profile",
     ) -> None:
         self.base_url = base_url.rstrip("/")
 
@@ -50,6 +56,8 @@ class VerdiktClient:
             client_id=client_id,
             client_secret=client_secret,
             http=self._http,
+            audience=audience,
+            scope=scope,
         )
         self._slug_cache: dict[str, int] = {}
 
