@@ -17,6 +17,11 @@ def _build_handler(captured: dict) -> httpx.MockTransport:
         url = str(request.url)
         if url.endswith("/.well-known"):
             return httpx.Response(200, json={"issuer": "http://issuer.test"})
+        if url.endswith("/.well-known/openid-configuration"):
+            return httpx.Response(
+                200,
+                json={"token_endpoint": "http://issuer.test/oauth/v2/token"},
+            )
         if "/oauth/v2/token" in url:
             return httpx.Response(
                 200,

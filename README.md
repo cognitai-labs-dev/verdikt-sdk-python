@@ -53,4 +53,24 @@ await client.run_evaluation(
 
 ## Authentication
 
-The SDK authenticates via Zitadel OAuth2 client credentials. Create a machine user in your Zitadel project and pass its `client_id` and `client_secret` to `EvaluationClient`.
+The SDK authenticates via the OAuth2 **client-credentials** grant against any
+OIDC-compliant provider (Zitadel, Keycloak, Okta, Auth0, ...). The token
+endpoint is discovered from the provider's `/.well-known/openid-configuration`,
+so no provider-specific URL is hardcoded.
+
+Create a machine / service-account client in your IdP and pass its `client_id`
+and `client_secret` to `VerdiktClient`:
+
+```python
+client = VerdiktClient(
+    base_url="https://verdikt.mycompany.com",
+    client_id="...",
+    client_secret="...",
+    # Set when the backend verifies a specific OIDC_AUDIENCE and your IdP
+    # wouldn't otherwise stamp it onto the token's `aud`:
+    audience="<backend OIDC_AUDIENCE>",
+)
+```
+
+The backend verifies the token's issuer and audience, so `audience` must match
+the service's `OIDC_AUDIENCE` when audience verification is enabled.

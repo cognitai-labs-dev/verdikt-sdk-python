@@ -14,16 +14,26 @@ from yalc import LLMModel
 
 
 class WellKnown(BaseModel):
-    """Response from ``GET /.well-known``."""
+    """Response from the Verdikt service ``GET /.well-known`` (the issuer)."""
 
     issuer: str
 
 
+class OpenIDConfiguration(BaseModel):
+    """Subset of the IdP's ``GET {issuer}/.well-known/openid-configuration``."""
+
+    token_endpoint: str
+
+
 class TokenResponse(BaseModel):
-    """Response from ``POST {issuer}/oauth/v2/token``."""
+    """Response from ``POST {token_endpoint}`` (the IdP token endpoint).
+
+    ``id_token`` is optional — not every provider returns one for the
+    client-credentials grant.
+    """
 
     access_token: str
-    id_token: str
+    id_token: str | None = None
     token_type: str
     expires_in: int
 
