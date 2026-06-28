@@ -56,8 +56,6 @@ class EvaluationClient:
         client_secret: str,  # Zitadel machine user client secret
     ) -> None: ...
 
-    def create_app(self, slug: str, name: str) -> None: ...
-
     def add_questions(
         self,
         app_slug: str,
@@ -76,13 +74,14 @@ class EvaluationClient:
 
 ---
 
+## Prerequisite: the app must already exist
+
+The SDK does **not** create apps. A machine client is scoped to the apps it is
+bound to and cannot create new ones. Before using the SDK, an admin must create
+the app and bind this client to it in the Verdikt admin UI. The SDK then
+references the app by its slug.
+
 ## Method details
-
-### `create_app(slug, name)`
-Idempotent — safe to call on every deploy.
-
-1. `GET /v1/app/by-slug/{slug}` → if 200, app exists → no-op
-2. If 404 → `POST /v1/app` with `{ "slug": slug, "name": name }`
 
 ### `add_questions(app_slug, questions)`
 Idempotent — safe to call on every deploy. Uses SHA-256 of the question text as the match key so full text is never compared directly (questions can be long).
@@ -137,7 +136,7 @@ All three methods resolve `app_slug` → `app_id` via `GET /v1/app/by-slug/{slug
 
 - Lowercase, alphanumeric, hyphens only — e.g. `"my-app"`, `"gpt-wrapper-v2"`
 - Enforced by the API (422 if invalid format)
-- Chosen by the integrator at `create_app` time; stable forever
+- Chosen when the app is created in the admin UI; stable forever
 
 ---
 
@@ -159,9 +158,8 @@ client = EvaluationClient(
     client_secret="...",
 )
 
-# Idempotent setup — safe to call on every deploy
-client.create_app(slug="my-app", name="My App")
-
+# The app ("my-app") must already exist and this client must be bound to it
+# (created in the admin UI). The SDK does not create apps.
 client.add_questions("my-app", [
     {"question": "What is the capital of France?", "human_answer": "Paris"},
     {"question": "What is 2 + 2?", "human_answer": "4"},

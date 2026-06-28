@@ -20,8 +20,8 @@ client = VerdiktClient(
     client_secret="your-client-secret",
 )
 
-# Register your app (idempotent — safe to call on every deploy)
-await client.create_app(slug="my-app", name="My App")
+# The app ("my-app") must already exist and this client must be bound to it,
+# created beforehand in the Verdikt admin UI — the SDK does not create apps.
 
 # Sync questions to the dataset (idempotent)
 await client.add_questions("my-app", [
