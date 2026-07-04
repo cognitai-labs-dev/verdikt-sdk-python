@@ -17,11 +17,12 @@ Four additions needed before the SDK can be built:
 
 This replaces the need to fetch all apps and filter client-side.
 
-### 2. `GET /.well-known`
-Returns the Zitadel issuer URL so the SDK can discover it from `base_url` alone.
+### 2. `GET /.well-known/openid-configuration`
+Verdikt's own discovery document — publishes the token endpoint so the SDK can
+discover it from `base_url` alone.
 
 ```json
-{ "issuer": "https://my-zitadel.example.com" }
+{ "token_endpoint": "https://verdikt.example.com/auth/token" }
 ```
 
 ### 3. `GET /v1/app/{app_id}/datasets/hashes`
@@ -56,8 +57,6 @@ class EvaluationClient:
         client_secret: str,  # Zitadel machine user client secret
     ) -> None: ...
 
-    def create_app(self, slug: str, name: str) -> None: ...
-
     def add_questions(
         self,
         app_slug: str,
@@ -76,13 +75,14 @@ class EvaluationClient:
 
 ---
 
+## Prerequisite: the app must already exist
+
+The SDK does **not** create apps. A machine client is scoped to the apps it is
+bound to and cannot create new ones. Before using the SDK, an admin must create
+the app and bind this client to it in the Verdikt admin UI. The SDK then
+references the app by its slug.
+
 ## Method details
-
-### `create_app(slug, name)`
-Idempotent — safe to call on every deploy.
-
-1. `GET /v1/app/by-slug/{slug}` → if 200, app exists → no-op
-2. If 404 → `POST /v1/app` with `{ "slug": slug, "name": name }`
 
 ### `add_questions(app_slug, questions)`
 Idempotent — safe to call on every deploy. Uses SHA-256 of the question text as the match key so full text is never compared directly (questions can be long).
@@ -116,14 +116,15 @@ Idempotent — safe to call on every deploy. Uses SHA-256 of the question text a
 
 ## Auth
 
-Uses **OAuth2 client credentials grant** against Zitadel.
+Uses the **OAuth2 client credentials grant** against Verdikt itself (it is its
+own machine-token issuer).
 
 Flow on first API call:
-1. `GET {base_url}/.well-known` → get `issuer`
-2. `POST {issuer}/oauth/v2/token` with `grant_type=client_credentials`, `client_id`, `client_secret`
+1. `GET {base_url}/.well-known/openid-configuration` → get `token_endpoint`
+2. `POST {token_endpoint}` with `grant_type=client_credentials`, HTTP Basic `client_id`/`client_secret`
 3. Cache the token; refresh automatically when `expires_in` is reached
 
-The `issuer` and token are cached on the client instance — no repeated discovery calls.
+The token endpoint and token are cached on the client instance — no repeated discovery calls.
 
 ---
 
@@ -137,7 +138,7 @@ All three methods resolve `app_slug` → `app_id` via `GET /v1/app/by-slug/{slug
 
 - Lowercase, alphanumeric, hyphens only — e.g. `"my-app"`, `"gpt-wrapper-v2"`
 - Enforced by the API (422 if invalid format)
-- Chosen by the integrator at `create_app` time; stable forever
+- Chosen when the app is created in the admin UI; stable forever
 
 ---
 
@@ -159,9 +160,8 @@ client = EvaluationClient(
     client_secret="...",
 )
 
-# Idempotent setup — safe to call on every deploy
-client.create_app(slug="my-app", name="My App")
-
+# The app ("my-app") must already exist and this client must be bound to it
+# (created in the admin UI). The SDK does not create apps.
 client.add_questions("my-app", [
     {"question": "What is the capital of France?", "human_answer": "Paris"},
     {"question": "What is 2 + 2?", "human_answer": "4"},

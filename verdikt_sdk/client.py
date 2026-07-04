@@ -14,7 +14,6 @@ from verdikt_sdk.http import raise_for_status
 from verdikt_sdk.models import (
     AnswerWithCost,
     AppResponse,
-    CreateAppRequest,
     CreateDatasetRequest,
     CreateEvaluationRequest,
     DatasetEntry,
@@ -76,44 +75,6 @@ class VerdiktClient:
         self._slug_cache[app_slug] = app_id
         logger.debug("Resolved slug '%s' -> app_id %d", app_slug, app_id)
         return app_id
-
-    async def create_app(self, slug: str, name: str) -> None:
-        """Idempotent — safe to call on every deploy.
-
-        Checks whether the app already exists by slug; creates it only when it
-        does not.
-
-        Args:
-            slug: URL-safe identifier for the app (lowercase, hyphens only).
-            name: Human-readable display name.
-        """
-        logger.info("Ensuring app '%s' exists", slug)
-        if slug in self._slug_cache:
-            logger.info("App '%s' already exists, skipping creation", slug)
-            return
-
-        headers = await self._auth.headers()
-        resp = await self._http.get(
-            f"{self.base_url}/v1/app/by-slug/{slug}",
-            headers=headers,
-        )
-        if resp.status_code == 200:
-            logger.info("App '%s' already exists, skipping creation", slug)
-            self._slug_cache[slug] = AppResponse.model_validate(resp.json()).id
-            return
-        if resp.status_code != 404:
-            raise_for_status(resp)
-
-        logger.info("Creating app '%s' (%s)", slug, name)
-        body = CreateAppRequest(slug=slug, name=name)
-        create_resp = await self._http.post(
-            f"{self.base_url}/v1/app",
-            json=body.model_dump(),
-            headers=headers,
-        )
-        raise_for_status(create_resp)
-        self._slug_cache[slug] = AppResponse.model_validate(create_resp.json()).id
-        logger.info("App '%s' created", slug)
 
     async def add_questions(
         self,

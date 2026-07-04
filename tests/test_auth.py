@@ -5,12 +5,10 @@ from verdikt_sdk import VerdiktClient
 
 
 def _build_handler(captured: dict) -> httpx.MockTransport:
-    """Mock IdP discovery + token endpoint, capturing the token request form."""
+    """Mock Verdikt discovery + token endpoint, capturing the token request form."""
 
     def handler(request: httpx.Request) -> httpx.Response:
         url = str(request.url)
-        if url.endswith("/.well-known"):
-            return httpx.Response(200, json={"issuer": "http://issuer.test"})
         if url.endswith("/.well-known/openid-configuration"):
             captured["discovery_url"] = url
             return httpx.Response(
@@ -59,7 +57,7 @@ async def test_token_endpoint_is_discovered_from_openid_configuration():
     # Assert — used the discovered endpoint, not a hardcoded path
     assert token == "tok"
     assert captured["discovery_url"] == (
-        "http://issuer.test/.well-known/openid-configuration"
+        "http://verdikt.test/.well-known/openid-configuration"
     )
     assert captured["token_url"] == "http://issuer.test/custom/token"
 
