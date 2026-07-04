@@ -13,14 +13,8 @@ from yalc import LLMModel
 # ---------------------------------------------------------------------------
 
 
-class WellKnown(BaseModel):
-    """Response from the Verdikt service ``GET /.well-known`` (the issuer)."""
-
-    issuer: str
-
-
 class OpenIDConfiguration(BaseModel):
-    """Subset of the IdP's ``GET {issuer}/.well-known/openid-configuration``."""
+    """Subset of ``GET {base_url}/.well-known/openid-configuration``."""
 
     token_endpoint: str
 

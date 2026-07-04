@@ -17,11 +17,12 @@ Four additions needed before the SDK can be built:
 
 This replaces the need to fetch all apps and filter client-side.
 
-### 2. `GET /.well-known`
-Returns the Zitadel issuer URL so the SDK can discover it from `base_url` alone.
+### 2. `GET /.well-known/openid-configuration`
+Verdikt's own discovery document — publishes the token endpoint so the SDK can
+discover it from `base_url` alone.
 
 ```json
-{ "issuer": "https://my-zitadel.example.com" }
+{ "token_endpoint": "https://verdikt.example.com/auth/token" }
 ```
 
 ### 3. `GET /v1/app/{app_id}/datasets/hashes`
@@ -115,14 +116,15 @@ Idempotent — safe to call on every deploy. Uses SHA-256 of the question text a
 
 ## Auth
 
-Uses **OAuth2 client credentials grant** against Zitadel.
+Uses the **OAuth2 client credentials grant** against Verdikt itself (it is its
+own machine-token issuer).
 
 Flow on first API call:
-1. `GET {base_url}/.well-known` → get `issuer`
-2. `POST {issuer}/oauth/v2/token` with `grant_type=client_credentials`, `client_id`, `client_secret`
+1. `GET {base_url}/.well-known/openid-configuration` → get `token_endpoint`
+2. `POST {token_endpoint}` with `grant_type=client_credentials`, HTTP Basic `client_id`/`client_secret`
 3. Cache the token; refresh automatically when `expires_in` is reached
 
-The `issuer` and token are cached on the client instance — no repeated discovery calls.
+The token endpoint and token are cached on the client instance — no repeated discovery calls.
 
 ---
 

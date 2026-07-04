@@ -8,7 +8,7 @@ import time
 import httpx
 
 from verdikt_sdk.http import raise_for_status
-from verdikt_sdk.models import OpenIDConfiguration, TokenResponse, WellKnown
+from verdikt_sdk.models import OpenIDConfiguration, TokenResponse
 
 logger = logging.getLogger(__name__)
 
@@ -16,20 +16,19 @@ _DISCOVERY_TTL = 86400
 
 
 class TokenAuth:
-    """OAuth2 client-credentials token acquisition against any OIDC provider.
+    """OAuth2 client-credentials token acquisition against the Verdikt service.
 
-    The token endpoint is discovered from the provider's standard
-    ``/.well-known/openid-configuration`` document, so this works with any
-    OIDC-compliant IdP (Zitadel, Keycloak, Okta, Auth0, ...) — not just Zitadel.
+    Verdikt is its own machine-token issuer: the token endpoint is discovered
+    from its ``{base_url}/.well-known/openid-configuration`` document and the
+    returned bearer token is an opaque Verdikt-issued credential.
 
     Args:
-        base_url: Base URL of the evaluation service (used to discover the issuer).
-        client_id: Machine/service-account client ID registered in the IdP.
+        base_url: Base URL of the evaluation service (= the token issuer).
+        client_id: Machine-client ID (minted on an app's detail page).
         client_secret: The matching client secret.
         http: Shared ``httpx.AsyncClient`` instance.
-        audience: Optional ``audience`` to request, so the issued token's ``aud``
-            matches what the Verdikt backend verifies (``OIDC_AUDIENCE``). Sent
-            as the ``audience`` token-request parameter when set.
+        audience: Optional ``audience`` token-request parameter; unused by
+            Verdikt itself, kept for OAuth2 compatibility.
         scope: OAuth scopes to request. Defaults to ``"openid profile"``.
     """
 
@@ -49,21 +48,10 @@ class TokenAuth:
         self._audience = audience
         self._scope = scope
 
-        self._issuer: str | None = None
         self._token_endpoint: str | None = None
         self._token: str | None = None
         self._token_expires_at: float = 0.0
         self._discovery_expires_at: float = 0.0
-
-    async def _discover_issuer(self) -> str:
-        if self._issuer is not None and time.monotonic() < self._discovery_expires_at:
-            return self._issuer
-        logger.debug("Fetching issuer from %s/.well-known", self._base_url)
-        resp = await self._http.get(f"{self._base_url}/.well-known")
-        raise_for_status(resp)
-        self._issuer = WellKnown.model_validate(resp.json()).issuer
-        logger.debug("Discovered issuer: %s", self._issuer)
-        return self._issuer
 
     async def _discover_token_endpoint(self) -> str:
         if (
@@ -71,8 +59,7 @@ class TokenAuth:
             and time.monotonic() < self._discovery_expires_at
         ):
             return self._token_endpoint
-        issuer = await self._discover_issuer()
-        url = f"{issuer.rstrip('/')}/.well-known/openid-configuration"
+        url = f"{self._base_url.rstrip('/')}/.well-known/openid-configuration"
         logger.debug("Fetching OIDC configuration from %s", url)
         resp = await self._http.get(url)
         raise_for_status(resp)
